@@ -17,39 +17,46 @@ This system provides role-based access with two distinct interfaces:
 - **Database**: SQLite with Prisma ORM
 - **OCR**: PDF parsing and base64 image processing
 
+## Prerequisites
+
+- Node.js 18+ (recommended: Node.js 20 LTS)
+- npm
+
 ## Quick Start
 
-1. **Install dependencies**
+1. **Clone and enter project**
+   ```bash
+   git clone https://github.com/Nandanas1409/Expense_auditor.git
+   cd Expense_auditor/web
+   ```
+
+2. **Install dependencies**
    ```bash
    npm install
    ```
 
-2. **Set up environment**
+3. **Set up environment**
    ```bash
-   # Create .env.local file
+   # Create .env.local in /web
+   DATABASE_URL="file:./dev.db"
    GROQ_API_KEY=your_groq_api_key_here
    ```
 
-3. **Initialize database**
+4. **Initialize database**
    ```bash
    npx prisma generate
    npx prisma db push
    ```
 
-4. **Run development server**
+5. **Run development server**
    ```bash
    npm run dev
    ```
 
-5. **Access interfaces**
+6. **Access interfaces**
    - Login: [http://localhost:3000](http://localhost:3000)
    - Employee Portal: [http://localhost:3000/employee](http://localhost:3000/employee)
    - Finance Dashboard: [http://localhost:3000/auditor](http://localhost:3000/auditor)
-
-## Default Login Credentials
-
-- Employee: `employee` / `employee123`
-- Finance Auditor: `auditor` / `auditor123`
 
 ## How It Works
 
@@ -90,7 +97,7 @@ web/
 ├── public/
 │   ├── uploads/            # Saved receipts
 │   └── dummy_policy.pdf    # Sample policy document
-└── README.md
+└── README.md (repo root)
 ```
 
 ## Dependencies

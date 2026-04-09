@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model ExpenseSubmission {
+  id             String   @id @default(uuid())
+  merchant       String?
+  employeeName   String?
+  date           String?
+  claimedDate    String?
+  expenseCategory String?
+  location       String?
+  seniority      String?
+  totalAmount    Float?
+  currency       String?
+  justification  String
+  status         String   @default("PENDING")
+  reasoning      String?
+  policySnippet  String?
+  policyRuleResults String?
+  extractedData  String?
+  receiptReadable Boolean @default(true)
+  auditorOverride Boolean @default(false)
+  auditorComment String?
+  auditorOverriddenAt DateTime?
+  imageUrl       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model User {
+  id       String @id @default(uuid())
+  username String @unique
+  password String
+  role     String // "employee" or "auditor"
+}

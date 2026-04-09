@@ -1,0 +1,176 @@
+{
+  "version": "2026-04-09",
+  "statuses": {
+    "pass": "APPROVED",
+    "warn": "FLAGGED",
+    "fail": "REJECTED"
+  },
+  "rules": [
+    {
+      "id": "R-READABILITY",
+      "title": "Receipt must be readable",
+      "description": "Unreadable receipts require clarification before reimbursement.",
+      "severity": "warn",
+      "when": [],
+      "checks": [
+        { "field": "receiptReadable", "op": "eq", "value": true }
+      ],
+      "onFail": "Receipt appears unreadable. Please upload a clearer image."
+    },
+    {
+      "id": "R-DATE-MATCH",
+      "title": "Receipt date should match claimed date",
+      "description": "Receipt date must match the date entered by employee.",
+      "severity": "warn",
+      "when": [],
+      "checks": [
+        { "field": "dateMatchesClaim", "op": "eq", "value": true }
+      ],
+      "onFail": "Receipt date does not match claimed expense date."
+    },
+    {
+      "id": "R-NO-ALCOHOL",
+      "title": "Alcohol is prohibited",
+      "description": "Alcohol is not reimbursable.",
+      "severity": "fail",
+      "when": [
+        { "field": "category", "op": "eq", "value": "MEALS" }
+      ],
+      "checks": [
+        { "field": "containsAlcohol", "op": "eq", "value": false }
+      ],
+      "onFail": "Alcohol charges are not reimbursable under policy."
+    },
+    {
+      "id": "R-MEAL-LIMIT-STANDARD",
+      "title": "Meal limit in standard cities",
+      "description": "Meal expense must be at or below $30 in standard cities.",
+      "severity": "fail",
+      "when": [
+        { "field": "category", "op": "eq", "value": "MEALS" },
+        { "field": "isClientDinner", "op": "eq", "value": false },
+        { "field": "locationTier", "op": "eq", "value": "STANDARD" }
+      ],
+      "checks": [
+        { "field": "amount", "op": "lte", "value": 30 }
+      ],
+      "onFail": "Meal exceeds standard-city limit of $30."
+    },
+    {
+      "id": "R-MEAL-LIMIT-HIGH-COST",
+      "title": "Meal limit in high-cost cities",
+      "description": "Meal expense must be at or below $75 in high-cost cities.",
+      "severity": "fail",
+      "when": [
+        { "field": "category", "op": "eq", "value": "MEALS" },
+        { "field": "isClientDinner", "op": "eq", "value": false },
+        { "field": "locationTier", "op": "eq", "value": "HIGH_COST" }
+      ],
+      "checks": [
+        { "field": "amount", "op": "lte", "value": 75 }
+      ],
+      "onFail": "Meal exceeds high-cost-city limit of $75."
+    },
+    {
+      "id": "R-CLIENT-DINNER-LIMIT",
+      "title": "Client dinner limit",
+      "description": "Client dinner expense must be at or below $150.",
+      "severity": "fail",
+      "when": [
+        { "field": "category", "op": "eq", "value": "MEALS" },
+        { "field": "isClientDinner", "op": "eq", "value": true }
+      ],
+      "checks": [
+        { "field": "amount", "op": "lte", "value": 150 }
+      ],
+      "onFail": "Client dinner exceeds policy limit of $150."
+    },
+    {
+      "id": "R-LODGING-LIMIT-STANDARD",
+      "title": "Lodging limit in standard cities",
+      "description": "Lodging expense must be at or below $250 in standard cities.",
+      "severity": "fail",
+      "when": [
+        { "field": "category", "op": "eq", "value": "LODGING" },
+        { "field": "locationTier", "op": "eq", "value": "STANDARD" }
+      ],
+      "checks": [
+        { "field": "amount", "op": "lte", "value": 250 }
+      ],
+      "onFail": "Lodging exceeds standard-city limit of $250."
+    },
+    {
+      "id": "R-LODGING-LIMIT-HIGH-COST",
+      "title": "Lodging limit in high-cost cities",
+      "description": "Lodging expense must be at or below $400 in high-cost cities.",
+      "severity": "fail",
+      "when": [
+        { "field": "category", "op": "eq", "value": "LODGING" },
+        { "field": "locationTier", "op": "eq", "value": "HIGH_COST" }
+      ],
+      "checks": [
+        { "field": "amount", "op": "lte", "value": 400 }
+      ],
+      "onFail": "Lodging exceeds high-cost-city limit of $400."
+    },
+    {
+      "id": "R-TRANSPORT-PREMIUM",
+      "title": "Premium ground transport is prohibited",
+      "description": "Premium rides such as Uber Black are prohibited.",
+      "severity": "fail",
+      "when": [
+        { "field": "category", "op": "eq", "value": "TRANSPORT" }
+      ],
+      "checks": [
+        { "field": "containsPremiumTransport", "op": "eq", "value": false }
+      ],
+      "onFail": "Premium transport is not reimbursable."
+    },
+    {
+      "id": "R-SOFTWARE-MONTHLY-LIMIT-IC",
+      "title": "Software monthly limit for IC",
+      "description": "Individual contributors have a $50 software monthly limit.",
+      "severity": "fail",
+      "when": [
+        { "field": "category", "op": "eq", "value": "SOFTWARE" },
+        { "field": "seniority", "op": "eq", "value": "IC" }
+      ],
+      "checks": [
+        { "field": "amount", "op": "lte", "value": 50 }
+      ],
+      "onFail": "Software subscription exceeds IC limit of $50/month."
+    },
+    {
+      "id": "R-SOFTWARE-MONTHLY-LIMIT-MANAGER",
+      "title": "Software monthly limit for manager",
+      "description": "Managers have a $75 software monthly limit.",
+      "severity": "warn",
+      "when": [
+        { "field": "category", "op": "eq", "value": "SOFTWARE" },
+        { "field": "seniority", "op": "eq", "value": "MANAGER" }
+      ],
+      "checks": [
+        { "field": "amount", "op": "lte", "value": 75 }
+      ],
+      "onFail": "Software subscription exceeds manager guideline of $75/month."
+    },
+    {
+      "id": "R-WEEKEND-SINGLE-ITEM",
+      "title": "Weekend single-item team-building inconsistency",
+      "description": "Team-building claims on weekends with one line item are suspicious.",
+      "severity": "warn",
+      "when": [
+        { "field": "businessPurposeContains", "op": "includes", "value": "team" },
+        { "field": "receiptDayOfWeek", "op": "in", "value": ["SAT", "SUN"] }
+      ],
+      "checks": [
+        { "field": "lineItemCount", "op": "gt", "value": 1 }
+      ],
+      "onFail": "Team-building claim on weekend has limited itemization and needs review."
+    }
+  ],
+  "locationTiers": {
+    "HIGH_COST": ["NY", "NYC", "NEW YORK", "SAN FRANCISCO", "SAN FRANSISCO", "SF", "LONDON"],
+    "STANDARD": []
+  }
+}

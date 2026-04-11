@@ -5,7 +5,7 @@ import path from "path";
 import Groq from "groq-sdk";
 import { buildAuditFacts, runDeterministicAudit } from "@/lib/audit/deterministicEngine";
 import { getPolicySnippet, getPolicyText } from "@/lib/policy";
-import { SESSION_COOKIE } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 
 type ExtractionResult = {
   merchant: string;
@@ -62,8 +62,8 @@ function receiptDayOfWeek(dateText: string) {
 
 export async function POST(req: NextRequest) {
   try {
-    const role = req.cookies.get(SESSION_COOKIE)?.value;
-    if (role !== "employee") {
+    const session = await getSession();
+    if (!session || session.role !== "employee") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -192,15 +192,21 @@ Rules:
     const deterministicResult = runDeterministicAudit(facts);
 
     const failedMessages = deterministicResult.failedRules.map((rule) => `${rule.ruleId}: ${rule.message}`);
+    const passedMessages = deterministicResult.ruleResults
+      .filter((rule) => rule.passed)
+      .map((rule) => `${rule.ruleId}: ${rule.title}`);
     const reasoning =
       failedMessages.length > 0
         ? failedMessages.slice(0, 2).join(" ")
-        : "Approved: extracted receipt details comply with applicable policy constraints.";
+        : passedMessages.length > 0
+          ? passedMessages.slice(0, 2).join(" ")
+          : "No policy rules were triggered for this claim.";
 
     const submission = await prisma.expenseSubmission.create({
       data: {
         merchant: String(extracted.merchant ?? "Unknown Merchant"),
         employeeName,
+        employeeUsername: session.username,
         date: normalizedReceiptDate || null,
         claimedDate: normalizedClaimedDate || claimedDate,
         expenseCategory,

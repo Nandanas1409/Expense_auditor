@@ -57,7 +57,9 @@ export default async function AuditorDashboard() {
                   <tr key={sub.id} className="hover:bg-slate-800/30 transition-colors group">
                     <td className="p-6">
                       <div className="font-medium text-slate-200">{sub.employeeName || "Unknown Employee"}</div>
-                      <div className="text-xs text-slate-500 mt-1 truncate max-w-[200px]">{sub.justification}</div>
+                      <div className="text-xs text-slate-500 mt-1 truncate max-w-[280px]">
+                        {sub.reasoning || sub.justification}
+                      </div>
                     </td>
                     <td className="p-6 font-medium bg-gradient-to-r from-slate-200 to-slate-400 text-transparent bg-clip-text">
                       {sub.merchant || "Unknown"}
@@ -69,19 +71,26 @@ export default async function AuditorDashboard() {
                       ${sub.totalAmount?.toFixed(2)}
                     </td>
                     <td className="p-6">
-                      <div className={`inline-flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest ${
-                        sub.status === "REJECTED"
-                          ? "bg-rose-500/10 text-rose-400 border border-rose-500/20 shadow-[0_0_10px_-2px_rgba(244,63,94,0.2)]"
-                          : sub.status === "FLAGGED"
-                            ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                            : sub.status === "APPROVED"
-                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                              : "bg-slate-800 text-slate-300 border border-slate-700"
-                      }`}>
-                        {(sub.status === "FLAGGED" || sub.status === "REJECTED") && <BadgeAlert className="w-3.5 h-3.5" />}
-                        {sub.status === "APPROVED" && <CheckCircle className="w-3.5 h-3.5" />}
-                        {sub.status === "PENDING" && <Clock className="w-3.5 h-3.5" />}
-                        <span>{sub.status}</span>
+                      <div className="flex flex-col items-start space-y-2">
+                        <div className={`inline-flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest ${
+                          sub.status === "REJECTED"
+                            ? "bg-rose-500/10 text-rose-400 border border-rose-500/20 shadow-[0_0_10px_-2px_rgba(244,63,94,0.2)]"
+                            : sub.status === "FLAGGED"
+                              ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                              : sub.status === "APPROVED"
+                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                : "bg-slate-800 text-slate-300 border border-slate-700"
+                        }`}>
+                          {(sub.status === "FLAGGED" || sub.status === "REJECTED") && <BadgeAlert className="w-3.5 h-3.5" />}
+                          {sub.status === "APPROVED" && <CheckCircle className="w-3.5 h-3.5" />}
+                          {sub.status === "PENDING" && <Clock className="w-3.5 h-3.5" />}
+                          <span>{sub.status}</span>
+                        </div>
+                        {sub.auditorOverride && (
+                          <div className="text-[10px] font-bold uppercase text-indigo-400 tracking-widest bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                            Overridden
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="p-6 text-right">

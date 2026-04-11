@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { SESSION_COOKIE } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 
 const prisma = new PrismaClient();
 
 export async function POST(req: NextRequest) {
   try {
-    const role = req.cookies.get(SESSION_COOKIE)?.value;
-    if (role !== "auditor") {
+    const session = await getSession();
+    if (!session || session.role !== "auditor") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

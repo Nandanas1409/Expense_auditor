@@ -8,9 +8,10 @@ datasource db {
 }
 
 model ExpenseSubmission {
-  id             String   @id @default(uuid())
-  merchant       String?
-  employeeName   String?
+  id               String   @id @default(uuid())
+  merchant         String?
+  employeeName     String?
+  employeeUsername String?
   date           String?
   claimedDate    String?
   expenseCategory String?

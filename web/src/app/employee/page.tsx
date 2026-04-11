@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { UploadCloud, FileText, Loader2, DollarSign, Sparkles } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { UploadCloud, FileText, Loader2, DollarSign, Bell, X } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 
 type Submission = {
@@ -17,8 +17,32 @@ type Submission = {
   justification: string;
   status: "PENDING" | "APPROVED" | "FLAGGED" | "REJECTED";
   reasoning: string | null;
+  policyRuleResults?: string | null;
+  auditorOverride: boolean;
+  auditorComment: string | null;
   createdAt: string;
 };
+
+type RuleResult = {
+  ruleId: string;
+  title: string;
+  passed: boolean;
+  severity: "warn" | "fail";
+  message: string;
+};
+
+function parseRuleResults(raw: string | null | undefined): RuleResult[] {
+  if (!raw) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as RuleResult[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
 
 export default function EmployeePortal() {
   const [file, setFile] = useState<File | null>(null);
@@ -31,6 +55,49 @@ export default function EmployeePortal() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [submissionResult, setSubmissionResult] = useState<Submission | null>(null);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [isLoadingSubmissions, setIsLoadingSubmissions] = useState(true);
+  const [notifications, setNotifications] = useState<Submission[]>([]);
+
+  const fetchSubmissions = async () => {
+    try {
+      const res = await fetch("/api/submissions");
+      if (res.ok) {
+        const data = await res.json();
+        setSubmissions(data);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoadingSubmissions(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSubmissions();
+  }, []);
+
+  useEffect(() => {
+    if (submissions.length === 0) return;
+    try {
+      const seenIds = JSON.parse(localStorage.getItem("dismissed_overrides") || "[]");
+      const unseen = submissions.filter(sub => sub.auditorOverride && !seenIds.includes(sub.id));
+      if (unseen.length > 0) {
+        setNotifications(unseen);
+      }
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, [submissions]);
+
+  const dismissNotifications = () => {
+    try {
+      const seenIds = JSON.parse(localStorage.getItem("dismissed_overrides") || "[]");
+      const uniqueSeenIds = Array.from(new Set([...seenIds, ...notifications.map(s => s.id)]));
+      localStorage.setItem("dismissed_overrides", JSON.stringify(uniqueSeenIds));
+    } catch {}
+    setNotifications([]);
+  };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -66,6 +133,7 @@ export default function EmployeePortal() {
       if (res.ok) {
         const data = await res.json();
         setSubmissionResult(data.submission);
+        setSubmissions(prev => [data.submission, ...prev]);
         setFile(null);
         setEmployeeName("");
         setClaimedDate("");
@@ -86,6 +154,8 @@ export default function EmployeePortal() {
     }
   };
 
+  const appliedRules = parseRuleResults(submissionResult?.policyRuleResults);
+
   return (
     <main className="relative min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500/30 overflow-hidden">
       {/* Background Ambient Glow */}
@@ -98,18 +168,38 @@ export default function EmployeePortal() {
           <LogoutButton />
         </div>
 
+        {/* Notifications Banner */}
+        {notifications.length > 0 && (
+          <div className="relative w-full bg-indigo-950/40 border border-indigo-500/50 rounded-2xl p-6 shadow-[0_0_40px_-5px_rgba(99,102,241,0.25)] backdrop-blur-xl animate-[fadeInDown_0.5s_ease-out_forwards]">
+            <button 
+              onClick={dismissNotifications} 
+              className="absolute top-4 right-4 p-1.5 text-indigo-400/60 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="flex items-start md:items-center space-x-4">
+              <div className="flex-shrink-0 p-3 bg-indigo-500/20 rounded-xl relative">
+                <div className="absolute inset-0 bg-indigo-400/20 rounded-xl animate-ping" />
+                <Bell className="w-6 h-6 text-indigo-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-100 flex items-center">
+                  Auditor Update
+                  <span className="ml-3 px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 text-xs font-black uppercase tracking-widest">New</span>
+                </h3>
+                <p className="text-sm text-indigo-200 max-w-2xl mt-1 leading-relaxed">
+                  {notifications.length} of your expense submissions {notifications.length === 1 ? 'has' : 'have'} recently been overridden by an auditor. Check the "My Expenses" list below to read the reasoning.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header Section */}
         <header className="text-center space-y-6 max-w-3xl mx-auto">
-          <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 text-xs font-semibold tracking-widest uppercase shadow-[0_0_15px_-3px_rgba(99,102,241,0.3)]">
-            <Sparkles className="w-4 h-4" />
-            <span>AI Policy Engine</span>
-          </div>
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight bg-gradient-to-br from-white via-slate-200 to-indigo-400 text-transparent bg-clip-text pb-2 drop-shadow-sm">
             Expense Auditor
           </h1>
-          <p className="text-slate-400 text-lg md:text-xl leading-relaxed font-light">
-            Upload your receipt and provide a business justification. Our multimodal AI reads the receipt and instantly cross-references your claim against corporate policy.
-          </p>
         </header>
 
         <div className="space-y-8">
@@ -296,10 +386,78 @@ export default function EmployeePortal() {
                     </strong>
                     {submissionResult.reasoning}
                   </div>
+                  {appliedRules.length > 0 && (
+                    <div className="mt-4 p-4 rounded-2xl border border-slate-700/70 bg-slate-950/60">
+                      <strong className="block mb-3 text-slate-400 uppercase tracking-widest text-xs">Policy Rules Applied</strong>
+                      <div className="space-y-2">
+                        {appliedRules.map((rule) => (
+                          <div
+                            key={rule.ruleId}
+                            className={`rounded-xl border px-3 py-2 text-sm ${
+                              rule.passed
+                                ? "border-emerald-800/60 bg-emerald-950/20 text-emerald-100"
+                                : rule.severity === "warn"
+                                  ? "border-amber-800/60 bg-amber-950/20 text-amber-100"
+                                  : "border-rose-800/60 bg-rose-950/20 text-rose-100"
+                            }`}
+                          >
+                            <span className="font-semibold">{rule.ruleId}</span> - {rule.message}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           )}
+
+          {/* My Expenses List */}
+          <div className="w-full relative rounded-3xl bg-slate-900/40 backdrop-blur-2xl border border-slate-700/50 shadow-2xl overflow-hidden p-8">
+            <h2 className="text-2xl font-bold flex items-center space-x-3 text-slate-100 mb-6">
+              My Expenses
+            </h2>
+            {isLoadingSubmissions ? (
+              <div className="flex justify-center p-8"><Loader2 className="w-8 h-8 animate-spin text-indigo-500" /></div>
+            ) : submissions.length === 0 ? (
+              <p className="text-slate-400 text-center py-8">No expenses submitted yet.</p>
+            ) : (
+              <div className="space-y-4">
+                {submissions.map((sub) => (
+                  <div key={sub.id} className="flex flex-col md:flex-row md:items-center justify-between p-5 rounded-2xl bg-slate-950/50 border border-slate-800 hover:border-slate-700 transition-colors">
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-3">
+                        <span className="font-bold text-slate-200">{sub.merchant || "Unknown Merchant"}</span>
+                        <span className="text-sm text-slate-500">{sub.date || sub.claimedDate || ""}</span>
+                      </div>
+                      <p className="text-sm text-slate-400 italic">&quot;{sub.justification}&quot;</p>
+                      {sub.auditorOverride && sub.auditorComment && (
+                        <div className="mt-2 text-xs text-indigo-300 bg-indigo-900/20 p-2.5 rounded-lg border border-indigo-900/50 inline-block">
+                          <strong className="block font-bold uppercase tracking-widest text-[10px] mb-0.5">Auditor Note: </strong>
+                          {sub.auditorComment}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-6 mt-4 md:mt-0">
+                      <div className="text-right">
+                        <div className="font-bold text-slate-200">{sub.totalAmount} {sub.currency}</div>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <span className={`inline-flex px-3 py-1 text-xs font-black uppercase rounded-lg tracking-widest ${sub.status === 'APPROVED' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : sub.status === 'FLAGGED' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'}`}>
+                          {sub.status}
+                        </span>
+                        {sub.auditorOverride && (
+                          <span className="text-[10px] uppercase font-bold tracking-widest text-indigo-400 mt-1.5 whitespace-nowrap">
+                            Overridden By Auditor
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
         </div>
       </div>

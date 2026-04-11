@@ -1,14 +1,31 @@
+import { PrismaClient } from "@prisma/client";
+import { cookies } from "next/headers";
+
+const prisma = new PrismaClient();
+
 export type UserRole = "employee" | "auditor";
 
-export const SESSION_COOKIE = "expense_auth_role";
+export const SESSION_COOKIE = "expense_auth_session";
 
-const USERS = [
-  { username: "employee", password: "employee123", role: "employee" as const },
-  { username: "auditor", password: "auditor123", role: "auditor" as const },
-];
+export async function validateCredentials(username: string, password: string) {
+  const user = await prisma.user.findUnique({
+    where: { username: username.trim() }
+  });
+  
+  if (user && user.password === password) {
+    return user;
+  }
+  return null;
+}
 
-export function validateCredentials(username: string, password: string) {
-  return USERS.find(
-    (user) => user.username === username.trim() && user.password === password
-  );
+export async function getSession() {
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get(SESSION_COOKIE)?.value;
+  if (!sessionToken) return null;
+  try {
+    const sessionStr = Buffer.from(sessionToken, "base64").toString("utf-8");
+    return JSON.parse(sessionStr) as { username: string; role: UserRole };
+  } catch {
+    return null;
+  }
 }

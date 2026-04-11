@@ -59,7 +59,7 @@ export default function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full bg-transparent outline-none"
-                placeholder="employee or auditor"
+                placeholder="Enter your username"
               />
             </div>
           </div>

@@ -6,9 +6,9 @@ An AI-powered corporate expense auditing platform that combines LLM extraction w
 
 This system provides role-based access with two distinct interfaces:
 
-- **Login Page** (`/`): Sign in as employee or finance auditor
-- **Employee Portal** (`/employee`): Submit expense claims with receipt uploads
-- **Finance Auditor Dashboard** (`/auditor`): Review and manage expense claims
+- **Login Page** (`/`): Secure login portal with database-backed authentication.
+- **Employee Portal** (`/employee`): Submit expense claims and securely track your isolated history of submitted expenses.
+- **Finance Auditor Dashboard** (`/auditor`): Review and override expense claims with risk-sorted priorities.
 
 ## Technology Stack
 
@@ -42,18 +42,24 @@ This system provides role-based access with two distinct interfaces:
    GROQ_API_KEY=your_groq_api_key_here
    ```
 
-4. **Initialize database**
+4. **Initialize and Seed database**
    ```bash
    npx prisma generate
    npx prisma db push
+   node seed.js
    ```
 
-5. **Run development server**
+5. **Test Accounts Information**
+   - **Employee 1**: `employee1` / `password`
+   - **Employee 2**: `employee2` / `password`
+   - **Auditor**: `auditor` / `auditor123`
+
+6. **Run development server**
    ```bash
    npm run dev
    ```
 
-6. **Access interfaces**
+7. **Access interfaces**
    - Login: [http://localhost:3000](http://localhost:3000)
    - Employee Portal: [http://localhost:3000/employee](http://localhost:3000/employee)
    - Finance Dashboard: [http://localhost:3000/auditor](http://localhost:3000/auditor)
@@ -73,7 +79,9 @@ This system provides role-based access with two distinct interfaces:
 - Deterministic, policy-first decision engine
 - Risk-based claim sorting (`REJECTED` and `FLAGGED` on top)
 - Detailed audit trails with extracted data
-- Auditor override workflow with comments
+- Strict data isolation (Employees only see their own submissions)
+- Auditor override workflow with comments and UI badging
+- Interactive front-end notifications for overwritten rules
 - Professional UI with mobile responsiveness
 
 ## Project Structure
